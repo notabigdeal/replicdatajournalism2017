@@ -29,8 +29,8 @@ var width = 700,
 var projection = d3.geoOrthographic()
     .scale(250)
     .translate([width / 2, height / 2])
-    .clipAngle(90);
-    //.rotate([-100.4,-30]);
+    .clipAngle(90)
+    .rotate([-100.4,-30]);
 
 var path = d3.geoPath()
     .projection(projection);
@@ -57,7 +57,7 @@ svg.on("mousemove", function() {
   projection.rotate([λ(p[0]), φ(p[1])]);
   svg.selectAll("path").attr("d", path);
 });
-*/
+*/ 
 
 d3.json("./data/world-110m.json", function(error, world) {
   if (error) throw error;
