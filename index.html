@@ -27,7 +27,7 @@ var width = 700,
     height = 700;
 
 var projection = d3.geoOrthographic()
-    .scale(250)
+    .scale(220)
     .translate([width / 2, height / 2])
     .clipAngle(90)
     .rotate([-100.4,-30]);
@@ -50,6 +50,8 @@ var svg = d3.select("body").append("div")
             .attr("height", height)
             .append("g")
             ;
+            
+
 
 /*
 svg.on("mousemove", function() {
@@ -57,7 +59,16 @@ svg.on("mousemove", function() {
   projection.rotate([λ(p[0]), φ(p[1])]);
   svg.selectAll("path").attr("d", path);
 });
-*/ 
+*/
+let rotate0, coords0;
+let moving = true;
+
+let coords = () => projection.rotate(rotate0)
+          .invert([d3.event.x, d3.event.y]);
+          
+// regist a empty rect to receive drag vehavior
+
+
 
 d3.json("./data/world-110m.json", function(error, world) {
   if (error) throw error;
@@ -74,9 +85,10 @@ d3.json("./data/world-110m.json", function(error, world) {
         d3.select(this).style("fill","#444");
       })
       .on("click",function(d){
+        
        (function transition() {
               d3.select(this).transition()
-              .duration(1250)
+              .duration(750)
               .tween("rotate", function() {
                 var p = d3.geoCentroid(d),
                     r = d3.interpolate(projection.rotate(), [-p[0], -p[1]]);
@@ -86,7 +98,27 @@ d3.json("./data/world-110m.json", function(error, world) {
                 }
               });
             })();
-       });
+       })
+        .call(d3.drag()
+           .on('start', () => {           
+              rotate0 = projection.rotate();
+              coords0 = coords();
+              moving = true;
+              
+            })
+            .on('drag', () => {
+              const coords1 = coords();
+              projection.rotate([
+                rotate0[0] + coords1[0] - coords0[0],
+                rotate0[1] + coords1[1] - coords0[1],
+              ])
+              d3.selectAll("path").attr("d",path); 
+            })
+            .on('end', () => {
+              moving = false;
+            })
+        );
+
       
  svg.append("path")
     .datum(topojson.mesh(world, world.objects.countries, function(a, b) { return a !== b; }))
