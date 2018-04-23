@@ -8,7 +8,11 @@
     
   }
   .countries {
-    fill:#444;  
+    fill:#8b7a31;  
+  }
+  
+  .countries:hover {
+    fill:red;  
   }
   
   .borders {
@@ -49,12 +53,16 @@ var path = d3.geoPath()
 //
     
 var svg = d3.select("body").append("div")
-            .style("background-color","#EEE")
+            .style("background-color","rgb(120, 120, 120)")
             .append("svg")
             .attr("width", width)
             .attr("height", height)
             .append("g")
-            ;
+            .on("mousedown", mousedown);
+            
+            //.on("mousemove", mousemove)
+            //.on("mouseup", mouseup);
+            
             
 /*
 var λ = d3.scaleLinear()
@@ -89,14 +97,8 @@ d3.json("./data/world-110m.json", function(error, world) {
   svg.selectAll(".countries")
       .data(countries)
       .enter().append("path")
-      .attr("class", "countries")
+      .attr("class", "countries base")
       .attr("d", path)
-      .on("mouseover",function(){
-        d3.select(this).style("fill","red"); 
-        })
-      .on("mouseout",function(){
-        d3.select(this).style("fill","#444");
-      })
       .on("click",function(d){
         
        (function transition() {
@@ -113,12 +115,12 @@ d3.json("./data/world-110m.json", function(error, world) {
               });
             })();
        })
-        .call(d3.drag()
+       .call(d3.drag()
            .on('start', () => {           
               rotate0 = projection.rotate();
               coords0 = coords();
               moving = true;
-              
+               d3.event.preventDefault();
             })
             .on('drag', () => {
               const coords1 = coords();
@@ -138,7 +140,8 @@ d3.json("./data/world-110m.json", function(error, world) {
               moving = false;
             })
         );
-
+    
+      
       
  svg.append("path")
     .datum(topojson.mesh(world, world.objects.countries, function(a, b) { return a !== b; }))
@@ -157,7 +160,18 @@ d3.json("./data/world-110m.json", function(error, world) {
       
 });
 
-
+var ocean_fill = svg.append("defs").append("radialGradient")
+        .attr("id", "ocean_fill")
+        .attr("cx", "75%")
+        .attr("cy", "25%");
+      ocean_fill.append("stop").attr("offset", "5%").attr("stop-color", "#f4f8fe");
+      ocean_fill.append("stop").attr("offset", "100%").attr("stop-color", "#a1c8e3");
+      
+  svg.append("circle")
+    .attr("cx", width / 2).attr("cy", height / 2)
+    .attr("r", projection.scale())
+    .attr("class", "noclicks")
+    .style("fill", "url(#ocean_fill)");
 
 function flying_arc(pts) {
   var source = pts.source,
@@ -202,11 +216,36 @@ function fade_at_edge(d) {
   var start_dist = 1.57 - d3.geoDistance(start,centerPos),
       end_dist = 1.57 - d3.geoDistance(end,centerPos);
   
-  var fade = d3.scaleLinear().domain([-.7,0]).range([0.2,.4]) 
+  var fade = d3.scaleLinear().domain([-0.2,0]).range([0,0.4]) 
   var dist = start_dist < end_dist ? start_dist : end_dist; 
   console.log(fade(dist));
   return fade(dist);
 }
 
+// replace drag with mouseover
+var m0, o0;
+function mousedown() {
+  m0 = [d3.event.x, d3.event.y];
+  o0 = projection.rotate();
+  d3.event.preventDefault();
+}
+function mousemove() {
+  if (m0) {
+    var m1 = [d3.event.x, d3.event.y]
+      , o1 = [o0[0] + (m1[0] - m0[0]) / 6, o0[1] + (m0[1] - m1[1]) / 6];
+    o1[1] = o1[1] > 30  ? 30  :
+            o1[1] < -30 ? -30 :
+            o1[1];
+    projection.rotate(o1);
+    outer.rotate(o1);
+    refresh();
+  }
+}
+function mouseup() {
+  if (m0) {
+    mousemove();
+    m0 = null;
+  }
+}
 
 </script>
